@@ -61,9 +61,14 @@ compile_commands.json
 # vcpkg
 vcpkg_installed/
 
-# debug information files
-*.dwo
+# Xcode build products
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xcuserstate
 
-# test output & cache
-Testing/
-.cache/
+# macOS metadata
+.DS_Store
