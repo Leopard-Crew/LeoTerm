@@ -34,6 +34,24 @@
     [_task setStandardOutput:pipe];
     [_task setStandardError:pipe];
 
+    /*
+     * GUI applications launched from Finder or Xcode do not reliably inherit
+     * the same PATH as an interactive Terminal session on Leopard.
+     *
+     * Keep LeoTerm command execution deterministic by explicitly exposing
+     * Leopard's usual system paths, MacPorts, and /usr/local.
+     */
+    {
+        NSMutableDictionary *environment;
+        NSString *path;
+
+        environment = [NSMutableDictionary dictionaryWithDictionary:[[NSProcessInfo processInfo] environment]];
+        path = @"/usr/local/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11/bin";
+
+        [environment setObject:path forKey:@"PATH"];
+        [_task setEnvironment:environment];
+    }
+
     rootPath = [project rootPath];
     if (rootPath != nil && [rootPath length] > 0) {
         [_task setCurrentDirectoryPath:rootPath];
