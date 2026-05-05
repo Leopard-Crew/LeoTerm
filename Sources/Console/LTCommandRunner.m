@@ -4,35 +4,55 @@
 
 @implementation LTCommandRunner
 
+- (void)setDelegate:(id)delegate
+{
+    _delegate = delegate;
+}
+
+- (id)delegate
+{
+    return _delegate;
+}
+
 - (BOOL)isRunning
 {
     return (_task != nil && [_task isRunning]);
 }
 
-- (NSString *)runAction:(LTProjectAction *)action inProject:(LTProjectProfile *)project
+- (BOOL)runAction:(LTProjectAction *)action inProject:(LTProjectProfile *)project
 {
     NSString *rootPath;
     NSString *command;
-    NSPipe *pipe;
-    NSData *data;
-    NSString *output;
+    NSMutableDictionary *environment;
+    NSString *path;
 
     if ([self isRunning]) {
-        return @"A command is already running.\n";
+        if (_delegate != nil &&
+            [_delegate respondsToSelector:@selector(commandRunner:didReceiveOutput:)]) {
+            [_delegate commandRunner:self didReceiveOutput:@"A command is already running.\n"];
+        }
+
+        return NO;
     }
 
     command = [action shellCommand];
     if (command == nil || [command length] == 0) {
-        return @"No command configured.\n";
+        if (_delegate != nil &&
+            [_delegate respondsToSelector:@selector(commandRunner:didReceiveOutput:)]) {
+            [_delegate commandRunner:self didReceiveOutput:@"No command configured.\n"];
+        }
+
+        return NO;
     }
 
-    pipe = [NSPipe pipe];
+    _pipe = [[NSPipe alloc] init];
+    _readHandle = [[_pipe fileHandleForReading] retain];
 
     _task = [[NSTask alloc] init];
     [_task setLaunchPath:@"/bin/sh"];
     [_task setArguments:[NSArray arrayWithObjects:@"-lc", command, nil]];
-    [_task setStandardOutput:pipe];
-    [_task setStandardError:pipe];
+    [_task setStandardOutput:_pipe];
+    [_task setStandardError:_pipe];
 
     /*
      * GUI applications launched from Finder or Xcode do not reliably inherit
@@ -41,16 +61,11 @@
      * Keep LeoTerm command execution deterministic by explicitly exposing
      * Leopard's usual system paths, MacPorts, and /usr/local.
      */
-    {
-        NSMutableDictionary *environment;
-        NSString *path;
+    environment = [NSMutableDictionary dictionaryWithDictionary:[[NSProcessInfo processInfo] environment]];
+    path = @"/usr/local/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11/bin";
 
-        environment = [NSMutableDictionary dictionaryWithDictionary:[[NSProcessInfo processInfo] environment]];
-        path = @"/usr/local/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11/bin";
-
-        [environment setObject:path forKey:@"PATH"];
-        [_task setEnvironment:environment];
-    }
+    [environment setObject:path forKey:@"PATH"];
+    [_task setEnvironment:environment];
 
     rootPath = [project rootPath];
     if (rootPath != nil && [rootPath length] > 0) {
@@ -59,29 +74,151 @@
 
     _startDate = [[NSDate alloc] init];
 
-    [_task launch];
-    [_task waitUntilExit];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(readCompleted:)
+                                                 name:NSFileHandleReadCompletionNotification
+                                               object:_readHandle];
 
-    _lastTerminationStatus = [_task terminationStatus];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(taskTerminated:)
+                                                 name:NSTaskDidTerminateNotification
+                                               object:_task];
 
-    data = [[pipe fileHandleForReading] readDataToEndOfFile];
+    [_readHandle readInBackgroundAndNotify];
+
+    @try {
+        [_task launch];
+    }
+    @catch (NSException *exception) {
+        NSString *message;
+
+        message = [NSString stringWithFormat:@"Failed to launch command: %@\n", [exception reason]];
+
+        if (_delegate != nil &&
+            [_delegate respondsToSelector:@selector(commandRunner:didReceiveOutput:)]) {
+            [_delegate commandRunner:self didReceiveOutput:message];
+        }
+
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:NSFileHandleReadCompletionNotification
+                                                      object:_readHandle];
+
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:NSTaskDidTerminateNotification
+                                                      object:_task];
+
+        [_readHandle release];
+        _readHandle = nil;
+
+        [_pipe release];
+        _pipe = nil;
+
+        [_task release];
+        _task = nil;
+
+        [_startDate release];
+        _startDate = nil;
+
+        return NO;
+    }
+
+    if (_delegate != nil &&
+        [_delegate respondsToSelector:@selector(commandRunnerDidStart:)]) {
+        [_delegate commandRunnerDidStart:self];
+    }
+
+    return YES;
+}
+
+- (void)readCompleted:(NSNotification *)notification
+{
+    NSData *data;
+    NSString *output;
+
+    data = [[notification userInfo] objectForKey:NSFileHandleNotificationDataItem];
+
+    if (data == nil || [data length] == 0) {
+        return;
+    }
+
     output = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
 
     if (output == nil) {
         output = [[[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding] autorelease];
     }
 
-    [_startDate release];
-    _startDate = nil;
+    if (output != nil &&
+        _delegate != nil &&
+        [_delegate respondsToSelector:@selector(commandRunner:didReceiveOutput:)]) {
+        [_delegate commandRunner:self didReceiveOutput:output];
+    }
+
+    if ([self isRunning]) {
+        [_readHandle readInBackgroundAndNotify];
+    }
+}
+
+- (void)taskTerminated:(NSNotification *)notification
+{
+    NSTimeInterval duration;
+
+    _lastTerminationStatus = [_task terminationStatus];
+
+    duration = 0.0;
+    if (_startDate != nil) {
+        duration = -[_startDate timeIntervalSinceNow];
+    }
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:NSFileHandleReadCompletionNotification
+                                                  object:_readHandle];
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:NSTaskDidTerminateNotification
+                                                  object:_task];
+
+    /*
+     * Read remaining buffered data after the task has terminated.
+     */
+    {
+        NSData *data;
+        NSString *output;
+
+        data = [_readHandle readDataToEndOfFile];
+
+        if (data != nil && [data length] > 0) {
+            output = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+
+            if (output == nil) {
+                output = [[[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding] autorelease];
+            }
+
+            if (output != nil &&
+                _delegate != nil &&
+                [_delegate respondsToSelector:@selector(commandRunner:didReceiveOutput:)]) {
+                [_delegate commandRunner:self didReceiveOutput:output];
+            }
+        }
+    }
+
+    if (_delegate != nil &&
+        [_delegate respondsToSelector:@selector(commandRunner:didFinishWithStatus:duration:)]) {
+        [_delegate commandRunner:self
+             didFinishWithStatus:_lastTerminationStatus
+                         duration:duration];
+    }
+
+    [_readHandle release];
+    _readHandle = nil;
+
+    [_pipe release];
+    _pipe = nil;
 
     [_task release];
     _task = nil;
 
-    if (output == nil) {
-        return @"";
-    }
-
-    return output;
+    [_startDate release];
+    _startDate = nil;
 }
 
 - (int)lastTerminationStatus
@@ -98,9 +235,15 @@
 
 - (void)dealloc
 {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+
     [self terminate];
+
+    [_readHandle release];
+    [_pipe release];
     [_task release];
     [_startDate release];
+
     [super dealloc];
 }
 

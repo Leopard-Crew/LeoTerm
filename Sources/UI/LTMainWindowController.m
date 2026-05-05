@@ -43,6 +43,7 @@
                                                         rootPath:projectRootPath];
         _consoleLogView = [[LTConsoleLogView alloc] init];
         _commandRunner = [[LTCommandRunner alloc] init];
+        [_commandRunner setDelegate:self];
 
         [self buildWindowInterface];
 
@@ -240,7 +241,12 @@
                                command:(NSString *)command
 {
     LTProjectAction *action;
-    NSString *output;
+
+    if ([_commandRunner isRunning]) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendLine:@"A command is already running."];
+        return;
+    }
 
     action = [LTProjectAction shellActionWithIdentifier:identifier
                                                   title:title
@@ -250,14 +256,25 @@
     [_consoleLogView appendLine:[NSString stringWithFormat:@"> %@", title]];
     [_consoleLogView appendLine:[NSString stringWithFormat:@"$ %@", command]];
 
-    output = [_commandRunner runAction:action inProject:_currentProject];
+    [_commandRunner runAction:action inProject:_currentProject];
+}
 
-    if (output != nil && [output length] > 0) {
-        [_consoleLogView appendText:output];
-    }
+- (void)commandRunnerDidStart:(LTCommandRunner *)runner
+{
+    [_consoleLogView appendLine:@"Command started."];
+}
 
-    [_consoleLogView appendLine:[NSString stringWithFormat:@"Exit code: %d",
-                                 [_commandRunner lastTerminationStatus]]];
+- (void)commandRunner:(LTCommandRunner *)runner didReceiveOutput:(NSString *)output
+{
+    [_consoleLogView appendText:output];
+}
+
+- (void)commandRunner:(LTCommandRunner *)runner
+  didFinishWithStatus:(int)status
+             duration:(NSTimeInterval)duration
+{
+    [_consoleLogView appendLine:[NSString stringWithFormat:@"Exit code: %d", status]];
+    [_consoleLogView appendLine:[NSString stringWithFormat:@"Duration: %.2f seconds", duration]];
 }
 
 - (IBAction)runBuildAction:(id)sender
