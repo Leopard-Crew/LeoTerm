@@ -52,11 +52,26 @@
         return nil;
     }
 
-    defaultProfileName = [terminalPreferences objectForKey:@"Default Window Settings"];
+    /*
+     * Terminal.app stores two relevant profile choices:
+     *
+     * - Startup Window Settings: profile used when Terminal.app starts
+     * - Default Window Settings: profile used for default new windows
+     *
+     * For LeoTerm we prefer the startup profile because it best represents
+     * the user's actively chosen Terminal look. On this Leopard system this
+     * correctly selects "Homebrew" even when the default profile is "Basic".
+     */
+    defaultProfileName = [terminalPreferences objectForKey:@"Startup Window Settings"];
 
-    if (defaultProfileName == nil) {
-        defaultProfileName = [terminalPreferences objectForKey:@"Startup Window Settings"];
+    if (defaultProfileName != nil) {
+        profile = [windowSettings objectForKey:defaultProfileName];
+        if ([profile isKindOfClass:[NSDictionary class]]) {
+            return profile;
+        }
     }
+
+    defaultProfileName = [terminalPreferences objectForKey:@"Default Window Settings"];
 
     if (defaultProfileName != nil) {
         profile = [windowSettings objectForKey:defaultProfileName];
