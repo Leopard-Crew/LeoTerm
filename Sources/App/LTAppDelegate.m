@@ -1,5 +1,5 @@
 #import "LTAppDelegate.h"
-#import "LTMainWindowController.h"
+#import "../UI/LTMainWindowController.h"
 
 @implementation LTAppDelegate
 
@@ -7,6 +7,12 @@
 {
     _mainWindowController = [[LTMainWindowController alloc] init];
     [_mainWindowController showWindow:self];
+    [[_mainWindowController window] makeKeyAndOrderFront:self];
+}
+
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    return YES;
 }
 
 - (void)dealloc

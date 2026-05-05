@@ -10,6 +10,7 @@
 - (NSTextView *)textView;
 
 - (void)clear;
+- (void)appendText:(NSString *)text;
 - (void)appendLine:(NSString *)line;
 - (void)addMark:(id)mark;
 - (NSArray *)marks;

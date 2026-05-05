@@ -7,10 +7,12 @@
 {
     NSTask *_task;
     NSDate *_startDate;
+    int _lastTerminationStatus;
 }
 
 - (BOOL)isRunning;
-- (void)runAction:(LTProjectAction *)action inProject:(LTProjectProfile *)project;
+- (NSString *)runAction:(LTProjectAction *)action inProject:(LTProjectProfile *)project;
+- (int)lastTerminationStatus;
 - (void)terminate;
 
 @end

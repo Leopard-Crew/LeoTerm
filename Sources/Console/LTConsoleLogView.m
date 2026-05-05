@@ -27,20 +27,27 @@
     [_marks removeAllObjects];
 }
 
-- (void)appendLine:(NSString *)line
+- (void)appendText:(NSString *)text
 {
-    NSString *text;
     NSAttributedString *attributedText;
 
-    if (_textView == nil || line == nil) {
+    if (_textView == nil || text == nil) {
         return;
     }
 
-    text = [line stringByAppendingString:@"\n"];
     attributedText = [[[NSAttributedString alloc] initWithString:text] autorelease];
 
     [[_textView textStorage] appendAttributedString:attributedText];
     [_textView scrollRangeToVisible:NSMakeRange([[_textView string] length], 0)];
+}
+
+- (void)appendLine:(NSString *)line
+{
+    if (line == nil) {
+        return;
+    }
+
+    [self appendText:[line stringByAppendingString:@"\n"]];
 }
 
 - (void)addMark:(id)mark
