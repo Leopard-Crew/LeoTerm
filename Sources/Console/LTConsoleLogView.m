@@ -30,12 +30,31 @@
 - (void)appendText:(NSString *)text
 {
     NSAttributedString *attributedText;
+    NSDictionary *attributes;
+    NSFont *font;
 
     if (_textView == nil || text == nil) {
         return;
     }
 
-    attributedText = [[[NSAttributedString alloc] initWithString:text] autorelease];
+    font = [_textView font];
+
+    if (font == nil) {
+        font = [NSFont fontWithName:@"Monaco" size:11.0];
+    }
+
+    if (font == nil) {
+        font = [NSFont userFixedPitchFontOfSize:11.0];
+    }
+
+    attributes = nil;
+    if (font != nil) {
+        attributes = [NSDictionary dictionaryWithObject:font
+                                                 forKey:NSFontAttributeName];
+    }
+
+    attributedText = [[[NSAttributedString alloc] initWithString:text
+                                                      attributes:attributes] autorelease];
 
     [[_textView textStorage] appendAttributedString:attributedText];
     [_textView scrollRangeToVisible:NSMakeRange([[_textView string] length], 0)];
