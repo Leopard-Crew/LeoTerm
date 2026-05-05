@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1DDD58140DA1D0A300B32029 /* MainMenu.xib */; };
+		8421C2972FA9DD71006A2CB0 /* LTProjectAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C27E2FA9DD71006A2CB0 /* LTProjectAction.m */; };
+		8421C2992FA9DD71006A2CB0 /* LTAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2822FA9DD71006A2CB0 /* LTAppDelegate.m */; };
+		8421C29B2FA9DD71006A2CB0 /* LTCommandRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2862FA9DD71006A2CB0 /* LTCommandRunner.m */; };
+		8421C29C2FA9DD71006A2CB0 /* LTConsoleLogView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2882FA9DD71006A2CB0 /* LTConsoleLogView.m */; };
+		8421C29E2FA9DD71006A2CB0 /* LTMarkedOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */; };
+		8421C2A02FA9DD71006A2CB0 /* LTProjectProfile.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2902FA9DD71006A2CB0 /* LTProjectProfile.m */; };
+		8421C2A22FA9DD71006A2CB0 /* LTMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2942FA9DD71006A2CB0 /* LTMainWindowController.m */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -22,6 +29,20 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* LeoTerm_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LeoTerm_Prefix.pch; sourceTree = "<group>"; };
+		8421C27D2FA9DD71006A2CB0 /* LTProjectAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTProjectAction.h; sourceTree = "<group>"; };
+		8421C27E2FA9DD71006A2CB0 /* LTProjectAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTProjectAction.m; sourceTree = "<group>"; };
+		8421C2812FA9DD71006A2CB0 /* LTAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTAppDelegate.h; sourceTree = "<group>"; };
+		8421C2822FA9DD71006A2CB0 /* LTAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTAppDelegate.m; sourceTree = "<group>"; };
+		8421C2852FA9DD71006A2CB0 /* LTCommandRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTCommandRunner.h; sourceTree = "<group>"; };
+		8421C2862FA9DD71006A2CB0 /* LTCommandRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTCommandRunner.m; sourceTree = "<group>"; };
+		8421C2872FA9DD71006A2CB0 /* LTConsoleLogView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTConsoleLogView.h; sourceTree = "<group>"; };
+		8421C2882FA9DD71006A2CB0 /* LTConsoleLogView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTConsoleLogView.m; sourceTree = "<group>"; };
+		8421C28B2FA9DD71006A2CB0 /* LTMarkedOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTMarkedOutput.h; sourceTree = "<group>"; };
+		8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTMarkedOutput.m; sourceTree = "<group>"; };
+		8421C28F2FA9DD71006A2CB0 /* LTProjectProfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTProjectProfile.h; sourceTree = "<group>"; };
+		8421C2902FA9DD71006A2CB0 /* LTProjectProfile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTProjectProfile.m; sourceTree = "<group>"; };
+		8421C2932FA9DD71006A2CB0 /* LTMainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTMainWindowController.h; sourceTree = "<group>"; };
+		8421C2942FA9DD71006A2CB0 /* LTMainWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTMainWindowController.m; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* LeoTerm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeoTerm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,6 +62,7 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				8421C2792FA9DD71006A2CB0 /* Sources */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -111,6 +133,75 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		8421C2792FA9DD71006A2CB0 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				8421C27B2FA9DD71006A2CB0 /* Actions */,
+				8421C27F2FA9DD71006A2CB0 /* App */,
+				8421C2832FA9DD71006A2CB0 /* Console */,
+				8421C2892FA9DD71006A2CB0 /* Logs */,
+				8421C28D2FA9DD71006A2CB0 /* Projects */,
+				8421C2912FA9DD71006A2CB0 /* UI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		8421C27B2FA9DD71006A2CB0 /* Actions */ = {
+			isa = PBXGroup;
+			children = (
+				8421C27D2FA9DD71006A2CB0 /* LTProjectAction.h */,
+				8421C27E2FA9DD71006A2CB0 /* LTProjectAction.m */,
+			);
+			path = Actions;
+			sourceTree = "<group>";
+		};
+		8421C27F2FA9DD71006A2CB0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				8421C2812FA9DD71006A2CB0 /* LTAppDelegate.h */,
+				8421C2822FA9DD71006A2CB0 /* LTAppDelegate.m */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		8421C2832FA9DD71006A2CB0 /* Console */ = {
+			isa = PBXGroup;
+			children = (
+				8421C2852FA9DD71006A2CB0 /* LTCommandRunner.h */,
+				8421C2862FA9DD71006A2CB0 /* LTCommandRunner.m */,
+				8421C2872FA9DD71006A2CB0 /* LTConsoleLogView.h */,
+				8421C2882FA9DD71006A2CB0 /* LTConsoleLogView.m */,
+			);
+			path = Console;
+			sourceTree = "<group>";
+		};
+		8421C2892FA9DD71006A2CB0 /* Logs */ = {
+			isa = PBXGroup;
+			children = (
+				8421C28B2FA9DD71006A2CB0 /* LTMarkedOutput.h */,
+				8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */,
+			);
+			path = Logs;
+			sourceTree = "<group>";
+		};
+		8421C28D2FA9DD71006A2CB0 /* Projects */ = {
+			isa = PBXGroup;
+			children = (
+				8421C28F2FA9DD71006A2CB0 /* LTProjectProfile.h */,
+				8421C2902FA9DD71006A2CB0 /* LTProjectProfile.m */,
+			);
+			path = Projects;
+			sourceTree = "<group>";
+		};
+		8421C2912FA9DD71006A2CB0 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				8421C2932FA9DD71006A2CB0 /* LTMainWindowController.h */,
+				8421C2942FA9DD71006A2CB0 /* LTMainWindowController.m */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -167,6 +258,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
+				8421C2972FA9DD71006A2CB0 /* LTProjectAction.m in Sources */,
+				8421C2992FA9DD71006A2CB0 /* LTAppDelegate.m in Sources */,
+				8421C29B2FA9DD71006A2CB0 /* LTCommandRunner.m in Sources */,
+				8421C29C2FA9DD71006A2CB0 /* LTConsoleLogView.m in Sources */,
+				8421C29E2FA9DD71006A2CB0 /* LTMarkedOutput.m in Sources */,
+				8421C2A02FA9DD71006A2CB0 /* LTProjectProfile.m in Sources */,
+				8421C2A22FA9DD71006A2CB0 /* LTMainWindowController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
