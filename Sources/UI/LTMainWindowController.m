@@ -8,6 +8,8 @@
 
 - (void)buildWindowInterface;
 - (NSButton *)buttonWithTitle:(NSString *)title action:(SEL)action frame:(NSRect)frame;
+- (NSString *)defaultProjectRootPath;
+- (NSString *)projectListText;
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command;
@@ -19,6 +21,7 @@
 - (id)init
 {
     NSWindow *window;
+    NSString *projectRootPath;
 
     window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100, 100, 900, 560)
                                          styleMask:(NSTitledWindowMask |
@@ -34,7 +37,10 @@
     [window release];
 
     if (self) {
-        _currentProject = [[LTProjectProfile alloc] initWithName:@"LeoTerm" rootPath:nil];
+        projectRootPath = [self defaultProjectRootPath];
+
+        _currentProject = [[LTProjectProfile alloc] initWithName:@"LeoTerm"
+                                                        rootPath:projectRootPath];
         _consoleLogView = [[LTConsoleLogView alloc] init];
         _commandRunner = [[LTCommandRunner alloc] init];
 
@@ -43,11 +49,68 @@
         [_consoleLogView appendLine:@"LeoTerm Developer Console"];
         [_consoleLogView appendLine:@"Native Leopard command workbench skeleton is alive."];
         [_consoleLogView appendLine:@""];
+
+        if (projectRootPath != nil) {
+            [_consoleLogView appendLine:[NSString stringWithFormat:@"Default project: %@", projectRootPath]];
+        } else {
+            [_consoleLogView appendLine:@"Default project: not found"];
+        }
+
+        [_consoleLogView appendLine:@""];
         [_consoleLogView appendLine:@"V1 scope: project actions, build logs, Finder integration."];
         [_consoleLogView appendLine:@"Not a Windows Terminal port. Not a PowerShell clone."];
     }
 
     return self;
+}
+
+- (NSString *)defaultProjectRootPath
+{
+    NSFileManager *fileManager;
+    NSString *candidatePath;
+    NSString *gitPath;
+    NSString *projectPath;
+    int attempts;
+
+    fileManager = [NSFileManager defaultManager];
+
+    /*
+     * During development the app usually lives below:
+     *
+     *   LeoTerm/build/Debug/LeoTerm.app
+     *
+     * Walk upwards until we find the real LeoTerm project root.
+     */
+    candidatePath = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
+
+    attempts = 0;
+    while (candidatePath != nil && [candidatePath length] > 1 && attempts < 12) {
+        gitPath = [candidatePath stringByAppendingPathComponent:@".git"];
+        projectPath = [candidatePath stringByAppendingPathComponent:@"LeoTerm.xcodeproj"];
+
+        if ([fileManager fileExistsAtPath:gitPath] &&
+            [fileManager fileExistsAtPath:projectPath]) {
+            return candidatePath;
+        }
+
+        candidatePath = [candidatePath stringByDeletingLastPathComponent];
+        attempts++;
+    }
+
+    return nil;
+}
+
+- (NSString *)projectListText
+{
+    NSString *rootPath;
+
+    rootPath = [_currentProject rootPath];
+
+    if (rootPath == nil || [rootPath length] == 0) {
+        return @"LeoTerm\n\nNo project profile loaded yet.";
+    }
+
+    return [NSString stringWithFormat:@"LeoTerm\n\n%@", rootPath];
 }
 
 - (void)buildWindowInterface
@@ -96,7 +159,7 @@
     projectTextView = [[NSTextView alloc] initWithFrame:[[projectScrollView contentView] bounds]];
     [projectTextView setEditable:NO];
     [projectTextView setSelectable:YES];
-    [projectTextView setString:@"LeoTerm\n\nNo project profile loaded yet."];
+    [projectTextView setString:[self projectListText]];
     [projectTextView setFont:[NSFont systemFontOfSize:11.0]];
     [projectTextView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
 
@@ -201,21 +264,21 @@
 {
     [self runProjectActionWithIdentifier:@"org.quietcode.leoterm.action.build"
                                    title:@"Build"
-                                 command:@"echo 'Build action placeholder'"];
+                                 command:@"/usr/bin/xcodebuild -project LeoTerm.xcodeproj -configuration Debug"];
 }
 
 - (IBAction)runCleanAction:(id)sender
 {
     [self runProjectActionWithIdentifier:@"org.quietcode.leoterm.action.clean"
                                    title:@"Clean"
-                                 command:@"echo 'Clean action placeholder'"];
+                                 command:@"/usr/bin/xcodebuild -project LeoTerm.xcodeproj clean"];
 }
 
 - (IBAction)runSmokeTestAction:(id)sender
 {
     [self runProjectActionWithIdentifier:@"org.quietcode.leoterm.action.smokeTest"
                                    title:@"Smoke Test"
-                                 command:@"echo 'LeoTerm smoke test: developer console skeleton is alive.'"];
+                                 command:@"pwd; echo ''; if command -v git >/dev/null 2>&1; then git status --short; echo ''; git log --oneline -3; else echo 'git not found'; fi"];
 }
 
 - (IBAction)revealProjectInFinder:(id)sender
@@ -233,6 +296,7 @@
     }
 
     [[NSWorkspace sharedWorkspace] selectFile:rootPath inFileViewerRootedAtPath:nil];
+    [_consoleLogView appendLine:[NSString stringWithFormat:@"Revealed: %@", rootPath]];
 }
 
 - (void)dealloc
