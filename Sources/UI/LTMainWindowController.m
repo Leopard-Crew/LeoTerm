@@ -14,6 +14,7 @@
 - (NSString *)chellTimestampStringForDate:(NSDate *)date;
 
 - (void)appendWelcomeText;
+- (void)setStatusText:(NSString *)statusText;
 - (void)renderTranscriptView;
 - (void)appendTranscriptBlock:(LTTranscriptBlock *)block;
 - (LTTranscriptBlock *)transcriptBlockWithIdentifier:(NSUInteger)identifier;
@@ -63,6 +64,7 @@
         _nextTranscriptBlockIdentifier = 1;
         _selectedBlockField = nil;
         _selectedBlockStepper = nil;
+        _statusTextField = nil;
 
         [self buildWindowInterface];
         [self appendWelcomeText];
@@ -90,6 +92,19 @@
     [_consoleLogView appendLine:@""];
     [_consoleLogView appendLine:@"V1 scope: project actions, build logs, Finder integration."];
     [_consoleLogView appendLine:@"Not a Windows Terminal port. Not a PowerShell clone."];
+}
+
+- (void)setStatusText:(NSString *)statusText
+{
+    if (_statusTextField == nil) {
+        return;
+    }
+
+    if (statusText == nil) {
+        statusText = @"";
+    }
+
+    [_statusTextField setStringValue:statusText];
 }
 
 - (NSString *)defaultProjectRootPath
@@ -153,6 +168,7 @@
     NSTextField *selectedBlockLabel;
     NSScrollView *consoleScrollView;
     NSTextView *consoleTextView;
+    NSTextField *statusTextField;
     NSRect bounds;
 
     contentView = [[self window] contentView];
@@ -267,9 +283,9 @@
 
     [self updateSelectedBlockControls];
 
-    consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
+    consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 34,
                                                                        bounds.size.width - 220,
-                                                                       bounds.size.height - 96)];
+                                                                       bounds.size.height - 118)];
     [consoleScrollView setBorderType:NSBezelBorder];
     [consoleScrollView setHasVerticalScroller:YES];
     [consoleScrollView setHasHorizontalScroller:YES];
@@ -287,6 +303,22 @@
 
     [rightView addSubview:consoleScrollView];
     [consoleScrollView release];
+
+    statusTextField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 10,
+                                                                    bounds.size.width - 220,
+                                                                    18)];
+    [statusTextField setStringValue:@"Ready"];
+    [statusTextField setBezeled:NO];
+    [statusTextField setDrawsBackground:NO];
+    [statusTextField setEditable:NO];
+    [statusTextField setSelectable:NO];
+    [statusTextField setFont:[NSFont systemFontOfSize:11.0]];
+    [statusTextField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
+
+    _statusTextField = [statusTextField retain];
+
+    [rightView addSubview:statusTextField];
+    [statusTextField release];
 
     [splitView addSubview:leftView];
     [splitView addSubview:rightView];
@@ -364,10 +396,20 @@
         return;
     }
 
-    [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[-] #%04lu · %@ · %@",
-                                            (unsigned long)[block identifier],
-                                            timestamp,
-                                            [block title]]];
+    if ([block endedAt] != nil) {
+        [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[-] #%04lu · %@ · %@ · Exit %d · %.2f seconds · %lu lines",
+                                                (unsigned long)[block identifier],
+                                                timestamp,
+                                                [block title],
+                                                [block exitStatus],
+                                                [block duration],
+                                                (unsigned long)[block lineCount]]];
+    } else {
+        [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[-] #%04lu · %@ · %@",
+                                                (unsigned long)[block identifier],
+                                                timestamp,
+                                                [block title]]];
+    }
     [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"cwd: %@", [block workingDirectory]]];
     [_consoleLogView appendChellMetadataLine:@"command:"];
     [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"$ %@", [block command]]];
@@ -378,11 +420,6 @@
         [_consoleLogView appendText:[block outputText]];
     }
 
-    [_consoleLogView appendChellMetadataLine:@""];
-    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"result: Exit code %d · Duration %.2f seconds · %lu lines",
-                                              [block exitStatus],
-                                              [block duration],
-                                              (unsigned long)[block lineCount]]];
     [_consoleLogView appendChellSeparatorLine];
 }
 
@@ -565,7 +602,12 @@
 
 - (void)commandRunnerDidStart:(LTCommandRunner *)runner
 {
-    [_consoleLogView appendChellMetadataLine:@"status: running"];
+    if (_currentTranscriptBlock != nil) {
+        [self setStatusText:[NSString stringWithFormat:@"Running: %@",
+                             [_currentTranscriptBlock title]]];
+    } else {
+        [self setStatusText:@"Running command..."];
+    }
 }
 
 - (void)commandRunner:(LTCommandRunner *)runner didReceiveOutput:(NSString *)output
@@ -578,13 +620,23 @@
   didFinishWithStatus:(int)status
              duration:(NSTimeInterval)duration
 {
+    NSString *stateText;
+
     [_currentTranscriptBlock finishWithExitStatus:status duration:duration];
 
-    [_consoleLogView appendChellMetadataLine:@""];
-    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"result: Exit code %d · Duration %.2f seconds · %lu lines",
-                                              [_currentTranscriptBlock exitStatus],
-                                              [_currentTranscriptBlock duration],
-                                              (unsigned long)[_currentTranscriptBlock lineCount]]];
+    if (status == 0) {
+        stateText = @"succeeded";
+    } else {
+        stateText = @"failed";
+    }
+
+    [self setStatusText:[NSString stringWithFormat:@"%@ %@ · Exit %d · %.2f seconds · %lu lines",
+                         [_currentTranscriptBlock title],
+                         stateText,
+                         [_currentTranscriptBlock exitStatus],
+                         [_currentTranscriptBlock duration],
+                         (unsigned long)[_currentTranscriptBlock lineCount]]];
+
     [_consoleLogView appendChellSeparatorLine];
 
     [_currentTranscriptBlock release];
@@ -627,7 +679,7 @@
     }
 
     [[NSWorkspace sharedWorkspace] selectFile:rootPath inFileViewerRootedAtPath:nil];
-    [_consoleLogView appendLine:[NSString stringWithFormat:@"Revealed: %@", rootPath]];
+    [self setStatusText:[NSString stringWithFormat:@"Revealed: %@", rootPath]];
 }
 
 - (IBAction)collapseLastTranscriptBlock:(id)sender
@@ -714,6 +766,7 @@
     [_currentTranscriptBlock release];
     [_selectedBlockField release];
     [_selectedBlockStepper release];
+    [_statusTextField release];
 
     [super dealloc];
 }

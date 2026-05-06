@@ -17,6 +17,8 @@
 
     NSTextField *_selectedBlockField;
     NSStepper *_selectedBlockStepper;
+
+    NSTextField *_statusTextField;
 }
 
 - (IBAction)runBuildAction:(id)sender;
