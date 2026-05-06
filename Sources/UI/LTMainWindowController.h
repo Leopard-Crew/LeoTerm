@@ -19,6 +19,7 @@
     NSStepper *_selectedBlockStepper;
 
     NSTextField *_statusTextField;
+    NSPopUpButton *_actionsPopUpButton;
 }
 
 - (IBAction)runBuildAction:(id)sender;
@@ -30,5 +31,6 @@
 - (IBAction)collapseSelectedTranscriptBlock:(id)sender;
 - (IBAction)expandAllTranscriptBlocks:(id)sender;
 - (IBAction)selectedBlockStepperChanged:(id)sender;
+- (IBAction)runSelectedAction:(id)sender;
 
 @end

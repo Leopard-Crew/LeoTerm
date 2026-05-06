@@ -65,6 +65,7 @@
         _selectedBlockField = nil;
         _selectedBlockStepper = nil;
         _statusTextField = nil;
+        _actionsPopUpButton = nil;
 
         [self buildWindowInterface];
         [self appendWelcomeText];
@@ -159,12 +160,7 @@
     NSScrollView *projectScrollView;
     NSTextView *projectTextView;
     NSButton *buildButton;
-    NSButton *cleanButton;
-    NSButton *smokeButton;
-    NSButton *revealButton;
-    NSButton *collapseButton;
     NSButton *collapseSelectedButton;
-    NSButton *expandButton;
     NSTextField *selectedBlockLabel;
     NSScrollView *consoleScrollView;
     NSTextView *consoleTextView;
@@ -212,26 +208,23 @@
     [leftView addSubview:projectScrollView];
     [projectScrollView release];
 
-    buildButton = [self buttonWithTitle:@"Build"
+    buildButton = [self buttonWithTitle:@"Build & Go"
                                  action:@selector(runBuildAction:)
-                                  frame:NSMakeRect(12, bounds.size.height - 38, 80, 26)];
-    cleanButton = [self buttonWithTitle:@"Clean"
-                                 action:@selector(runCleanAction:)
-                                  frame:NSMakeRect(100, bounds.size.height - 38, 80, 26)];
-    smokeButton = [self buttonWithTitle:@"Smoke Test"
-                                 action:@selector(runSmokeTestAction:)
-                                  frame:NSMakeRect(188, bounds.size.height - 38, 110, 26)];
-    revealButton = [self buttonWithTitle:@"Reveal"
-                                  action:@selector(revealProjectInFinder:)
-                                   frame:NSMakeRect(306, bounds.size.height - 38, 80, 26)];
-    collapseButton = [self buttonWithTitle:@"Collapse Last"
-                                    action:@selector(collapseLastTranscriptBlock:)
-                                     frame:NSMakeRect(394, bounds.size.height - 38, 120, 26)];
-    expandButton = [self buttonWithTitle:@"Expand All"
-                                  action:@selector(expandAllTranscriptBlocks:)
-                                   frame:NSMakeRect(522, bounds.size.height - 38, 100, 26)];
+                                  frame:NSMakeRect(12, bounds.size.height - 38, 100, 26)];
 
-    selectedBlockLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(12, bounds.size.height - 68, 44, 18)];
+    _actionsPopUpButton = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(122, bounds.size.height - 39, 150, 26)
+                                                     pullsDown:NO];
+    [_actionsPopUpButton addItemWithTitle:@"Actions"];
+    [_actionsPopUpButton addItemWithTitle:@"Smoke Test"];
+    [_actionsPopUpButton addItemWithTitle:@"Clean"];
+    [_actionsPopUpButton addItemWithTitle:@"Reveal"];
+    [_actionsPopUpButton addItemWithTitle:@"Collapse Last"];
+    [_actionsPopUpButton addItemWithTitle:@"Expand All"];
+    [_actionsPopUpButton selectItemAtIndex:0];
+    [_actionsPopUpButton setTarget:self];
+    [_actionsPopUpButton setAction:@selector(runSelectedAction:)];
+
+    selectedBlockLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(288, bounds.size.height - 34, 44, 18)];
     [selectedBlockLabel setStringValue:@"Block:"];
     [selectedBlockLabel setBezeled:NO];
     [selectedBlockLabel setDrawsBackground:NO];
@@ -239,13 +232,13 @@
     [selectedBlockLabel setSelectable:NO];
     [selectedBlockLabel setFont:[NSFont systemFontOfSize:11.0]];
 
-    _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(60, bounds.size.height - 72, 46, 24)];
+    _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(336, bounds.size.height - 38, 46, 24)];
     [_selectedBlockField setStringValue:@"1"];
     [_selectedBlockField setFont:[NSFont systemFontOfSize:11.0]];
     [_selectedBlockField setAlignment:NSRightTextAlignment];
     [_selectedBlockField setDelegate:self];
 
-    _selectedBlockStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(108, bounds.size.height - 72, 18, 24)];
+    _selectedBlockStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(384, bounds.size.height - 38, 18, 24)];
     [_selectedBlockStepper setMinValue:1.0];
     [_selectedBlockStepper setMaxValue:1.0];
     [_selectedBlockStepper setIncrement:1.0];
@@ -255,31 +248,23 @@
     [_selectedBlockStepper setTarget:self];
     [_selectedBlockStepper setAction:@selector(selectedBlockStepperChanged:)];
 
-    collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
+    collapseSelectedButton = [self buttonWithTitle:@"Collapse"
                                            action:@selector(collapseSelectedTranscriptBlock:)
-                                            frame:NSMakeRect(134, bounds.size.height - 72, 140, 26)];
+                                            frame:NSMakeRect(412, bounds.size.height - 38, 90, 26)];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
-    [cleanButton setAutoresizingMask:NSViewMinYMargin];
-    [smokeButton setAutoresizingMask:NSViewMinYMargin];
-    [revealButton setAutoresizingMask:NSViewMinYMargin];
-    [collapseButton setAutoresizingMask:NSViewMinYMargin];
+    [_actionsPopUpButton setAutoresizingMask:NSViewMinYMargin];
     [collapseSelectedButton setAutoresizingMask:NSViewMinYMargin];
-    [expandButton setAutoresizingMask:NSViewMinYMargin];
     [selectedBlockLabel setAutoresizingMask:NSViewMinYMargin];
     [_selectedBlockField setAutoresizingMask:NSViewMinYMargin];
     [_selectedBlockStepper setAutoresizingMask:NSViewMinYMargin];
 
     [rightView addSubview:buildButton];
-    [rightView addSubview:cleanButton];
-    [rightView addSubview:smokeButton];
-    [rightView addSubview:revealButton];
-    [rightView addSubview:collapseButton];
-    [rightView addSubview:collapseSelectedButton];
-    [rightView addSubview:expandButton];
+    [rightView addSubview:_actionsPopUpButton];
     [rightView addSubview:selectedBlockLabel];
     [rightView addSubview:_selectedBlockField];
     [rightView addSubview:_selectedBlockStepper];
+    [rightView addSubview:collapseSelectedButton];
 
     [selectedBlockLabel release];
 
@@ -287,7 +272,7 @@
 
     consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
-                                                                       bounds.size.height - 106)];
+                                                                       bounds.size.height - 72)];
     [consoleScrollView setBorderType:NSBezelBorder];
     [consoleScrollView setHasVerticalScroller:YES];
     [consoleScrollView setHasHorizontalScroller:NO];
@@ -650,6 +635,27 @@
     _currentTranscriptBlock = nil;
 }
 
+- (IBAction)runSelectedAction:(id)sender
+{
+    NSString *title;
+
+    title = [_actionsPopUpButton titleOfSelectedItem];
+
+    if ([title isEqualToString:@"Smoke Test"]) {
+        [self runSmokeTestAction:sender];
+    } else if ([title isEqualToString:@"Clean"]) {
+        [self runCleanAction:sender];
+    } else if ([title isEqualToString:@"Reveal"]) {
+        [self revealProjectInFinder:sender];
+    } else if ([title isEqualToString:@"Collapse Last"]) {
+        [self collapseLastTranscriptBlock:sender];
+    } else if ([title isEqualToString:@"Expand All"]) {
+        [self expandAllTranscriptBlocks:sender];
+    }
+
+    [_actionsPopUpButton selectItemAtIndex:0];
+}
+
 - (IBAction)runBuildAction:(id)sender
 {
     [self runProjectActionWithIdentifier:@"org.quietcode.leoterm.action.build"
@@ -774,6 +780,7 @@
     [_selectedBlockField release];
     [_selectedBlockStepper release];
     [_statusTextField release];
+    [_actionsPopUpButton release];
 
     [super dealloc];
 }
