@@ -41,7 +41,8 @@
                                          styleMask:(NSTitledWindowMask |
                                                     NSClosableWindowMask |
                                                     NSMiniaturizableWindowMask |
-                                                    NSResizableWindowMask)
+                                                    NSResizableWindowMask |
+                                                    NSUnifiedTitleAndToolbarWindowMask)
                                            backing:NSBackingStoreBuffered
                                              defer:NO];
 
