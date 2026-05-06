@@ -12,6 +12,11 @@
 - (NSString *)defaultProjectRootPath;
 - (NSString *)projectListText;
 - (NSString *)chellTimestampStringForDate:(NSDate *)date;
+
+- (void)appendWelcomeText;
+- (void)renderTranscriptView;
+- (void)appendTranscriptBlock:(LTTranscriptBlock *)block;
+
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command;
@@ -25,7 +30,7 @@
     NSWindow *window;
     NSString *projectRootPath;
 
-    window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100, 100, 900, 560)
+    window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100, 100, 980, 560)
                                          styleMask:(NSTitledWindowMask |
                                                     NSClosableWindowMask |
                                                     NSMiniaturizableWindowMask |
@@ -52,23 +57,31 @@
         _nextTranscriptBlockIdentifier = 1;
 
         [self buildWindowInterface];
-
-        [_consoleLogView appendLine:@"LeoTerm Developer Console"];
-        [_consoleLogView appendLine:@"Native Leopard command workbench skeleton is alive."];
-        [_consoleLogView appendLine:@""];
-
-        if (projectRootPath != nil) {
-            [_consoleLogView appendLine:[NSString stringWithFormat:@"Default project: %@", projectRootPath]];
-        } else {
-            [_consoleLogView appendLine:@"Default project: not found"];
-        }
-
-        [_consoleLogView appendLine:@""];
-        [_consoleLogView appendLine:@"V1 scope: project actions, build logs, Finder integration."];
-        [_consoleLogView appendLine:@"Not a Windows Terminal port. Not a PowerShell clone."];
+        [self appendWelcomeText];
     }
 
     return self;
+}
+
+- (void)appendWelcomeText
+{
+    NSString *projectRootPath;
+
+    projectRootPath = [_currentProject rootPath];
+
+    [_consoleLogView appendLine:@"LeoTerm Developer Console"];
+    [_consoleLogView appendLine:@"Native Leopard command workbench skeleton is alive."];
+    [_consoleLogView appendLine:@""];
+
+    if (projectRootPath != nil) {
+        [_consoleLogView appendLine:[NSString stringWithFormat:@"Default project: %@", projectRootPath]];
+    } else {
+        [_consoleLogView appendLine:@"Default project: not found"];
+    }
+
+    [_consoleLogView appendLine:@""];
+    [_consoleLogView appendLine:@"V1 scope: project actions, build logs, Finder integration."];
+    [_consoleLogView appendLine:@"Not a Windows Terminal port. Not a PowerShell clone."];
 }
 
 - (NSString *)defaultProjectRootPath
@@ -81,13 +94,6 @@
 
     fileManager = [NSFileManager defaultManager];
 
-    /*
-     * During development the app usually lives below:
-     *
-     *   LeoTerm/build/Debug/LeoTerm.app
-     *
-     * Walk upwards until we find the real LeoTerm project root.
-     */
     candidatePath = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
 
     attempts = 0;
@@ -133,6 +139,8 @@
     NSButton *cleanButton;
     NSButton *smokeButton;
     NSButton *revealButton;
+    NSButton *collapseButton;
+    NSButton *expandButton;
     NSScrollView *consoleScrollView;
     NSTextView *consoleTextView;
     NSRect bounds;
@@ -188,16 +196,26 @@
     revealButton = [self buttonWithTitle:@"Reveal"
                                   action:@selector(revealProjectInFinder:)
                                    frame:NSMakeRect(306, bounds.size.height - 38, 80, 26)];
+    collapseButton = [self buttonWithTitle:@"Collapse Last"
+                                    action:@selector(collapseLastTranscriptBlock:)
+                                     frame:NSMakeRect(394, bounds.size.height - 38, 120, 26)];
+    expandButton = [self buttonWithTitle:@"Expand All"
+                                  action:@selector(expandAllTranscriptBlocks:)
+                                   frame:NSMakeRect(522, bounds.size.height - 38, 100, 26)];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
     [cleanButton setAutoresizingMask:NSViewMinYMargin];
     [smokeButton setAutoresizingMask:NSViewMinYMargin];
     [revealButton setAutoresizingMask:NSViewMinYMargin];
+    [collapseButton setAutoresizingMask:NSViewMinYMargin];
+    [expandButton setAutoresizingMask:NSViewMinYMargin];
 
     [rightView addSubview:buildButton];
     [rightView addSubview:cleanButton];
     [rightView addSubview:smokeButton];
     [rightView addSubview:revealButton];
+    [rightView addSubview:collapseButton];
+    [rightView addSubview:expandButton];
 
     consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
@@ -259,6 +277,65 @@
     return timestamp;
 }
 
+- (void)renderTranscriptView
+{
+    NSUInteger index;
+
+    [_consoleLogView clear];
+    [self appendWelcomeText];
+
+    for (index = 0; index < [_transcriptBlocks count]; index++) {
+        [self appendTranscriptBlock:[_transcriptBlocks objectAtIndex:index]];
+    }
+}
+
+- (void)appendTranscriptBlock:(LTTranscriptBlock *)block
+{
+    NSString *timestamp;
+
+    if (block == nil) {
+        return;
+    }
+
+    timestamp = [self chellTimestampStringForDate:[block startedAt]];
+
+    [_consoleLogView appendLine:@""];
+    [_consoleLogView appendChellSeparatorLine];
+
+    if ([block isCollapsed]) {
+        [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[+] #%04lu · %@ · %@ · Exit %d · %.2f seconds · %lu lines",
+                                                (unsigned long)[block identifier],
+                                                timestamp,
+                                                [block title],
+                                                [block exitStatus],
+                                                [block duration],
+                                                (unsigned long)[block lineCount]]];
+        [_consoleLogView appendChellSeparatorLine];
+        return;
+    }
+
+    [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[-] #%04lu · %@ · %@",
+                                            (unsigned long)[block identifier],
+                                            timestamp,
+                                            [block title]]];
+    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"cwd: %@", [block workingDirectory]]];
+    [_consoleLogView appendChellMetadataLine:@"command:"];
+    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"$ %@", [block command]]];
+    [_consoleLogView appendChellMetadataLine:@""];
+    [_consoleLogView appendChellMetadataLine:@"output:"];
+
+    if ([block outputText] != nil && [[block outputText] length] > 0) {
+        [_consoleLogView appendText:[block outputText]];
+    }
+
+    [_consoleLogView appendChellMetadataLine:@""];
+    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"result: Exit code %d · Duration %.2f seconds · %lu lines",
+                                              [block exitStatus],
+                                              [block duration],
+                                              (unsigned long)[block lineCount]]];
+    [_consoleLogView appendChellSeparatorLine];
+}
+
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command
@@ -294,7 +371,7 @@
 
     [_consoleLogView appendLine:@""];
     [_consoleLogView appendChellSeparatorLine];
-    [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"#%04lu · %@ · %@",
+    [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"[-] #%04lu · %@ · %@",
                                             (unsigned long)[_currentTranscriptBlock identifier],
                                             timestamp,
                                             [_currentTranscriptBlock title]]];
@@ -374,6 +451,45 @@
 
     [[NSWorkspace sharedWorkspace] selectFile:rootPath inFileViewerRootedAtPath:nil];
     [_consoleLogView appendLine:[NSString stringWithFormat:@"Revealed: %@", rootPath]];
+}
+
+- (IBAction)collapseLastTranscriptBlock:(id)sender
+{
+    LTTranscriptBlock *block;
+
+    if ([_commandRunner isRunning]) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:@"Cannot collapse while a command is running."];
+        return;
+    }
+
+    if ([_transcriptBlocks count] == 0) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:@"No transcript block available."];
+        return;
+    }
+
+    block = [_transcriptBlocks lastObject];
+    [block setCollapsed:YES];
+
+    [self renderTranscriptView];
+}
+
+- (IBAction)expandAllTranscriptBlocks:(id)sender
+{
+    NSUInteger index;
+
+    if ([_commandRunner isRunning]) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:@"Cannot expand while a command is running."];
+        return;
+    }
+
+    for (index = 0; index < [_transcriptBlocks count]; index++) {
+        [[_transcriptBlocks objectAtIndex:index] setCollapsed:NO];
+    }
+
+    [self renderTranscriptView];
 }
 
 - (void)dealloc

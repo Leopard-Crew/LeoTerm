@@ -21,4 +21,7 @@
 - (IBAction)runSmokeTestAction:(id)sender;
 - (IBAction)revealProjectInFinder:(id)sender;
 
+- (IBAction)collapseLastTranscriptBlock:(id)sender;
+- (IBAction)expandAllTranscriptBlocks:(id)sender;
+
 @end
