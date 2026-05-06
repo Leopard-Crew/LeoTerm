@@ -203,14 +203,11 @@
     collapseButton = [self buttonWithTitle:@"Collapse Last"
                                     action:@selector(collapseLastTranscriptBlock:)
                                      frame:NSMakeRect(394, bounds.size.height - 38, 120, 26)];
-    collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
-                                           action:@selector(collapseSelectedTranscriptBlock:)
-                                            frame:NSMakeRect(522, bounds.size.height - 38, 140, 26)];
     expandButton = [self buttonWithTitle:@"Expand All"
                                   action:@selector(expandAllTranscriptBlocks:)
-                                   frame:NSMakeRect(670, bounds.size.height - 38, 100, 26)];
+                                   frame:NSMakeRect(522, bounds.size.height - 38, 100, 26)];
 
-    selectedBlockLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(778, bounds.size.height - 34, 44, 18)];
+    selectedBlockLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(12, bounds.size.height - 68, 44, 18)];
     [selectedBlockLabel setStringValue:@"Block:"];
     [selectedBlockLabel setBezeled:NO];
     [selectedBlockLabel setDrawsBackground:NO];
@@ -218,9 +215,13 @@
     [selectedBlockLabel setSelectable:NO];
     [selectedBlockLabel setFont:[NSFont systemFontOfSize:11.0]];
 
-    _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(826, bounds.size.height - 38, 46, 24)];
+    _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(60, bounds.size.height - 72, 46, 24)];
     [_selectedBlockField setStringValue:@"1"];
     [_selectedBlockField setFont:[NSFont systemFontOfSize:11.0]];
+
+    collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
+                                           action:@selector(collapseSelectedTranscriptBlock:)
+                                            frame:NSMakeRect(114, bounds.size.height - 72, 140, 26)];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
     [cleanButton setAutoresizingMask:NSViewMinYMargin];
@@ -246,7 +247,7 @@
 
     consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
-                                                                       bounds.size.height - 62)];
+                                                                       bounds.size.height - 96)];
     [consoleScrollView setBorderType:NSBezelBorder];
     [consoleScrollView setHasVerticalScroller:YES];
     [consoleScrollView setHasHorizontalScroller:YES];
@@ -528,6 +529,8 @@
         [_consoleLogView appendChellMetadataLine:@"Cannot collapse while a command is running."];
         return;
     }
+
+    [[self window] makeFirstResponder:nil];
 
     identifier = [_selectedBlockField integerValue];
 
