@@ -174,7 +174,9 @@
     contentView = [[self window] contentView];
     bounds = [contentView bounds];
 
-    splitView = [[NSSplitView alloc] initWithFrame:bounds];
+    splitView = [[NSSplitView alloc] initWithFrame:NSMakeRect(0, 24,
+                                                               bounds.size.width,
+                                                               bounds.size.height - 24)];
     [splitView setVertical:YES];
     [splitView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
 
@@ -283,9 +285,9 @@
 
     [self updateSelectedBlockControls];
 
-    consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 34,
+    consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
-                                                                       bounds.size.height - 118)];
+                                                                       bounds.size.height - 106)];
     [consoleScrollView setBorderType:NSBezelBorder];
     [consoleScrollView setHasVerticalScroller:YES];
     [consoleScrollView setHasHorizontalScroller:YES];
@@ -304,8 +306,12 @@
     [rightView addSubview:consoleScrollView];
     [consoleScrollView release];
 
-    statusTextField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 10,
-                                                                    bounds.size.width - 220,
+    [splitView addSubview:leftView];
+    [splitView addSubview:rightView];
+    [contentView addSubview:splitView];
+
+    statusTextField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 3,
+                                                                    bounds.size.width - 24,
                                                                     18)];
     [statusTextField setStringValue:@"Ready"];
     [statusTextField setBezeled:NO];
@@ -313,16 +319,12 @@
     [statusTextField setEditable:NO];
     [statusTextField setSelectable:NO];
     [statusTextField setFont:[NSFont systemFontOfSize:11.0]];
-    [statusTextField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
+    [statusTextField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
 
     _statusTextField = [statusTextField retain];
 
-    [rightView addSubview:statusTextField];
+    [contentView addSubview:statusTextField];
     [statusTextField release];
-
-    [splitView addSubview:leftView];
-    [splitView addSubview:rightView];
-    [contentView addSubview:splitView];
 
     [leftView release];
     [rightView release];
