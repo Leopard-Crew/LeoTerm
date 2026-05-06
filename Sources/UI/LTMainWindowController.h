@@ -3,6 +3,7 @@
 @class LTProjectProfile;
 @class LTConsoleLogView;
 @class LTCommandRunner;
+@class LTTranscriptBlock;
 
 @interface LTMainWindowController : NSWindowController
 {
@@ -10,9 +11,9 @@
     LTConsoleLogView *_consoleLogView;
     LTCommandRunner *_commandRunner;
 
+    NSMutableArray *_transcriptBlocks;
+    LTTranscriptBlock *_currentTranscriptBlock;
     NSUInteger _nextTranscriptBlockIdentifier;
-    NSUInteger _currentTranscriptBlockIdentifier;
-    NSUInteger _currentTranscriptLineCount;
 }
 
 - (IBAction)runBuildAction:(id)sender;

@@ -13,6 +13,7 @@
 		8421C29B2FA9DD71006A2CB0 /* LTCommandRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2862FA9DD71006A2CB0 /* LTCommandRunner.m */; };
 		8421C29C2FA9DD71006A2CB0 /* LTConsoleLogView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2882FA9DD71006A2CB0 /* LTConsoleLogView.m */; };
 		8421C29E2FA9DD71006A2CB0 /* LTMarkedOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */; };
+		8421C2A42FAA0001006A2CB0 /* LTTranscriptBlock.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2A52FAA0001006A2CB0 /* LTTranscriptBlock.m */; };
 		8421C2A02FA9DD71006A2CB0 /* LTProjectProfile.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2902FA9DD71006A2CB0 /* LTProjectProfile.m */; };
 		8421C2A22FA9DD71006A2CB0 /* LTMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8421C2942FA9DD71006A2CB0 /* LTMainWindowController.m */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
@@ -39,6 +40,8 @@
 		8421C2882FA9DD71006A2CB0 /* LTConsoleLogView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTConsoleLogView.m; sourceTree = "<group>"; };
 		8421C28B2FA9DD71006A2CB0 /* LTMarkedOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTMarkedOutput.h; sourceTree = "<group>"; };
 		8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTMarkedOutput.m; sourceTree = "<group>"; };
+		8421C2A32FAA0001006A2CB0 /* LTTranscriptBlock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTTranscriptBlock.h; sourceTree = "<group>"; };
+		8421C2A52FAA0001006A2CB0 /* LTTranscriptBlock.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTTranscriptBlock.m; sourceTree = "<group>"; };
 		8421C28F2FA9DD71006A2CB0 /* LTProjectProfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTProjectProfile.h; sourceTree = "<group>"; };
 		8421C2902FA9DD71006A2CB0 /* LTProjectProfile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LTProjectProfile.m; sourceTree = "<group>"; };
 		8421C2932FA9DD71006A2CB0 /* LTMainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LTMainWindowController.h; sourceTree = "<group>"; };
@@ -180,6 +183,8 @@
 			children = (
 				8421C28B2FA9DD71006A2CB0 /* LTMarkedOutput.h */,
 				8421C28C2FA9DD71006A2CB0 /* LTMarkedOutput.m */,
+				8421C2A32FAA0001006A2CB0 /* LTTranscriptBlock.h */,
+				8421C2A52FAA0001006A2CB0 /* LTTranscriptBlock.m */,
 			);
 			path = Logs;
 			sourceTree = "<group>";
@@ -263,6 +268,7 @@
 				8421C29B2FA9DD71006A2CB0 /* LTCommandRunner.m in Sources */,
 				8421C29C2FA9DD71006A2CB0 /* LTConsoleLogView.m in Sources */,
 				8421C29E2FA9DD71006A2CB0 /* LTMarkedOutput.m in Sources */,
+				8421C2A42FAA0001006A2CB0 /* LTTranscriptBlock.m in Sources */,
 				8421C2A02FA9DD71006A2CB0 /* LTProjectProfile.m in Sources */,
 				8421C2A22FA9DD71006A2CB0 /* LTMainWindowController.m in Sources */,
 			);

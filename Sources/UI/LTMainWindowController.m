@@ -3,6 +3,7 @@
 #import "../Actions/LTProjectAction.h"
 #import "../Console/LTConsoleLogView.h"
 #import "../Console/LTCommandRunner.h"
+#import "../Logs/LTTranscriptBlock.h"
 
 @interface LTMainWindowController (Private)
 
@@ -10,8 +11,7 @@
 - (NSButton *)buttonWithTitle:(NSString *)title action:(SEL)action frame:(NSRect)frame;
 - (NSString *)defaultProjectRootPath;
 - (NSString *)projectListText;
-- (NSString *)chellTimestampString;
-- (NSUInteger)lineCountForText:(NSString *)text;
+- (NSString *)chellTimestampStringForDate:(NSDate *)date;
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command;
@@ -47,9 +47,9 @@
         _commandRunner = [[LTCommandRunner alloc] init];
         [_commandRunner setDelegate:self];
 
+        _transcriptBlocks = [[NSMutableArray alloc] init];
+        _currentTranscriptBlock = nil;
         _nextTranscriptBlockIdentifier = 1;
-        _currentTranscriptBlockIdentifier = 0;
-        _currentTranscriptLineCount = 0;
 
         [self buildWindowInterface];
 
@@ -242,7 +242,7 @@
     return button;
 }
 
-- (NSString *)chellTimestampString
+- (NSString *)chellTimestampStringForDate:(NSDate *)date
 {
     NSDateFormatter *formatter;
     NSString *timestamp;
@@ -250,39 +250,13 @@
     formatter = [[[NSDateFormatter alloc] init] autorelease];
     [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
 
-    timestamp = [formatter stringFromDate:[NSDate date]];
+    timestamp = [formatter stringFromDate:date];
 
     if (timestamp == nil) {
         timestamp = @"unknown time";
     }
 
     return timestamp;
-}
-
-- (NSUInteger)lineCountForText:(NSString *)text
-{
-    NSUInteger count;
-    NSUInteger index;
-    NSUInteger length;
-
-    if (text == nil || [text length] == 0) {
-        return 0;
-    }
-
-    count = 0;
-    length = [text length];
-
-    for (index = 0; index < length; index++) {
-        if ([text characterAtIndex:index] == '\n') {
-            count++;
-        }
-    }
-
-    if ([text characterAtIndex:(length - 1)] != '\n') {
-        count++;
-    }
-
-    return count;
 }
 
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
@@ -308,21 +282,27 @@
         rootPath = @"";
     }
 
-    timestamp = [self chellTimestampString];
-
-    _currentTranscriptBlockIdentifier = _nextTranscriptBlockIdentifier;
+    [_currentTranscriptBlock release];
+    _currentTranscriptBlock = [[LTTranscriptBlock alloc] initWithIdentifier:_nextTranscriptBlockIdentifier
+                                                                      title:title
+                                                                    command:command
+                                                           workingDirectory:rootPath];
+    [_transcriptBlocks addObject:_currentTranscriptBlock];
     _nextTranscriptBlockIdentifier++;
-    _currentTranscriptLineCount = 0;
+
+    timestamp = [self chellTimestampStringForDate:[_currentTranscriptBlock startedAt]];
 
     [_consoleLogView appendLine:@""];
     [_consoleLogView appendChellSeparatorLine];
     [_consoleLogView appendChellHeaderLine:[NSString stringWithFormat:@"#%04lu · %@ · %@",
-                                            (unsigned long)_currentTranscriptBlockIdentifier,
+                                            (unsigned long)[_currentTranscriptBlock identifier],
                                             timestamp,
-                                            title]];
-    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"cwd: %@", rootPath]];
+                                            [_currentTranscriptBlock title]]];
+    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"cwd: %@",
+                                              [_currentTranscriptBlock workingDirectory]]];
     [_consoleLogView appendChellMetadataLine:@"command:"];
-    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"$ %@", command]];
+    [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"$ %@",
+                                              [_currentTranscriptBlock command]]];
     [_consoleLogView appendChellMetadataLine:@""];
     [_consoleLogView appendChellMetadataLine:@"output:"];
 
@@ -336,7 +316,7 @@
 
 - (void)commandRunner:(LTCommandRunner *)runner didReceiveOutput:(NSString *)output
 {
-    _currentTranscriptLineCount += [self lineCountForText:output];
+    [_currentTranscriptBlock appendOutputText:output];
     [_consoleLogView appendText:output];
 }
 
@@ -344,15 +324,17 @@
   didFinishWithStatus:(int)status
              duration:(NSTimeInterval)duration
 {
+    [_currentTranscriptBlock finishWithExitStatus:status duration:duration];
+
     [_consoleLogView appendChellMetadataLine:@""];
     [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"result: Exit code %d · Duration %.2f seconds · %lu lines",
-                                              status,
-                                              duration,
-                                              (unsigned long)_currentTranscriptLineCount]];
+                                              [_currentTranscriptBlock exitStatus],
+                                              [_currentTranscriptBlock duration],
+                                              (unsigned long)[_currentTranscriptBlock lineCount]]];
     [_consoleLogView appendChellSeparatorLine];
 
-    _currentTranscriptBlockIdentifier = 0;
-    _currentTranscriptLineCount = 0;
+    [_currentTranscriptBlock release];
+    _currentTranscriptBlock = nil;
 }
 
 - (IBAction)runBuildAction:(id)sender
@@ -399,6 +381,10 @@
     [_currentProject release];
     [_consoleLogView release];
     [_commandRunner release];
+
+    [_transcriptBlocks release];
+    [_currentTranscriptBlock release];
+
     [super dealloc];
 }
 
