@@ -16,6 +16,7 @@
 - (void)appendWelcomeText;
 - (void)renderTranscriptView;
 - (void)appendTranscriptBlock:(LTTranscriptBlock *)block;
+- (LTTranscriptBlock *)transcriptBlockWithIdentifier:(NSUInteger)identifier;
 
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
@@ -55,6 +56,7 @@
         _transcriptBlocks = [[NSMutableArray alloc] init];
         _currentTranscriptBlock = nil;
         _nextTranscriptBlockIdentifier = 1;
+        _selectedBlockField = nil;
 
         [self buildWindowInterface];
         [self appendWelcomeText];
@@ -140,7 +142,9 @@
     NSButton *smokeButton;
     NSButton *revealButton;
     NSButton *collapseButton;
+    NSButton *collapseSelectedButton;
     NSButton *expandButton;
+    NSTextField *selectedBlockLabel;
     NSScrollView *consoleScrollView;
     NSTextView *consoleTextView;
     NSRect bounds;
@@ -199,23 +203,46 @@
     collapseButton = [self buttonWithTitle:@"Collapse Last"
                                     action:@selector(collapseLastTranscriptBlock:)
                                      frame:NSMakeRect(394, bounds.size.height - 38, 120, 26)];
+    collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
+                                           action:@selector(collapseSelectedTranscriptBlock:)
+                                            frame:NSMakeRect(522, bounds.size.height - 38, 140, 26)];
     expandButton = [self buttonWithTitle:@"Expand All"
                                   action:@selector(expandAllTranscriptBlocks:)
-                                   frame:NSMakeRect(522, bounds.size.height - 38, 100, 26)];
+                                   frame:NSMakeRect(670, bounds.size.height - 38, 100, 26)];
+
+    selectedBlockLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(778, bounds.size.height - 34, 44, 18)];
+    [selectedBlockLabel setStringValue:@"Block:"];
+    [selectedBlockLabel setBezeled:NO];
+    [selectedBlockLabel setDrawsBackground:NO];
+    [selectedBlockLabel setEditable:NO];
+    [selectedBlockLabel setSelectable:NO];
+    [selectedBlockLabel setFont:[NSFont systemFontOfSize:11.0]];
+
+    _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(826, bounds.size.height - 38, 46, 24)];
+    [_selectedBlockField setStringValue:@"1"];
+    [_selectedBlockField setFont:[NSFont systemFontOfSize:11.0]];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
     [cleanButton setAutoresizingMask:NSViewMinYMargin];
     [smokeButton setAutoresizingMask:NSViewMinYMargin];
     [revealButton setAutoresizingMask:NSViewMinYMargin];
     [collapseButton setAutoresizingMask:NSViewMinYMargin];
+    [collapseSelectedButton setAutoresizingMask:NSViewMinYMargin];
     [expandButton setAutoresizingMask:NSViewMinYMargin];
+    [selectedBlockLabel setAutoresizingMask:NSViewMinYMargin];
+    [_selectedBlockField setAutoresizingMask:NSViewMinYMargin];
 
     [rightView addSubview:buildButton];
     [rightView addSubview:cleanButton];
     [rightView addSubview:smokeButton];
     [rightView addSubview:revealButton];
     [rightView addSubview:collapseButton];
+    [rightView addSubview:collapseSelectedButton];
     [rightView addSubview:expandButton];
+    [rightView addSubview:selectedBlockLabel];
+    [rightView addSubview:_selectedBlockField];
+
+    [selectedBlockLabel release];
 
     consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
@@ -334,6 +361,22 @@
                                               [block duration],
                                               (unsigned long)[block lineCount]]];
     [_consoleLogView appendChellSeparatorLine];
+}
+
+- (LTTranscriptBlock *)transcriptBlockWithIdentifier:(NSUInteger)identifier
+{
+    NSUInteger index;
+    LTTranscriptBlock *block;
+
+    for (index = 0; index < [_transcriptBlocks count]; index++) {
+        block = [_transcriptBlocks objectAtIndex:index];
+
+        if ([block identifier] == identifier) {
+            return block;
+        }
+    }
+
+    return nil;
 }
 
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
@@ -475,6 +518,38 @@
     [self renderTranscriptView];
 }
 
+- (IBAction)collapseSelectedTranscriptBlock:(id)sender
+{
+    NSInteger identifier;
+    LTTranscriptBlock *block;
+
+    if ([_commandRunner isRunning]) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:@"Cannot collapse while a command is running."];
+        return;
+    }
+
+    identifier = [_selectedBlockField integerValue];
+
+    if (identifier <= 0) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:@"Please enter a valid block ID."];
+        return;
+    }
+
+    block = [self transcriptBlockWithIdentifier:(NSUInteger)identifier];
+
+    if (block == nil) {
+        [_consoleLogView appendLine:@""];
+        [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"Block #%04ld was not found.", (long)identifier]];
+        return;
+    }
+
+    [block setCollapsed:YES];
+
+    [self renderTranscriptView];
+}
+
 - (IBAction)expandAllTranscriptBlocks:(id)sender
 {
     NSUInteger index;
@@ -500,6 +575,7 @@
 
     [_transcriptBlocks release];
     [_currentTranscriptBlock release];
+    [_selectedBlockField release];
 
     [super dealloc];
 }

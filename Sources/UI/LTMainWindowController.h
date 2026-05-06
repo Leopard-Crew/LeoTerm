@@ -14,6 +14,8 @@
     NSMutableArray *_transcriptBlocks;
     LTTranscriptBlock *_currentTranscriptBlock;
     NSUInteger _nextTranscriptBlockIdentifier;
+
+    NSTextField *_selectedBlockField;
 }
 
 - (IBAction)runBuildAction:(id)sender;
@@ -22,6 +24,7 @@
 - (IBAction)revealProjectInFinder:(id)sender;
 
 - (IBAction)collapseLastTranscriptBlock:(id)sender;
+- (IBAction)collapseSelectedTranscriptBlock:(id)sender;
 - (IBAction)expandAllTranscriptBlocks:(id)sender;
 
 @end
