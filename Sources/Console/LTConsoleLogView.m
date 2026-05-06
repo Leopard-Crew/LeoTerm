@@ -8,6 +8,13 @@
 - (NSColor *)consoleColorFromTerminalProfile:(NSDictionary *)profile key:(NSString *)key;
 - (void)applyTerminalStyleToTextView;
 
+- (void)appendText:(NSString *)text font:(NSFont *)font color:(NSColor *)color;
+- (NSFont *)currentConsoleFont;
+- (NSFont *)boldConsoleFont;
+- (NSColor *)currentTextColor;
+- (NSColor *)mutedTextColor;
+- (NSColor *)separatorTextColor;
+
 @end
 
 @implementation LTConsoleLogView
@@ -58,9 +65,8 @@
      * - Startup Window Settings: profile used when Terminal.app starts
      * - Default Window Settings: profile used for default new windows
      *
-     * For LeoTerm we prefer the startup profile because it best represents
-     * the user's actively chosen Terminal look. On this Leopard system this
-     * correctly selects "Homebrew" even when the default profile is "Basic".
+     * LeoTerm prefers the startup profile because it best represents the
+     * user's actively chosen Terminal look.
      */
     defaultProfileName = [terminalPreferences objectForKey:@"Startup Window Settings"];
 
@@ -197,22 +203,9 @@
     }
 }
 
-- (void)clear
+- (NSFont *)currentConsoleFont
 {
-    [[_textView textStorage] setAttributedString:[[[NSAttributedString alloc] initWithString:@""] autorelease]];
-    [_marks removeAllObjects];
-}
-
-- (void)appendText:(NSString *)text
-{
-    NSAttributedString *attributedText;
-    NSMutableDictionary *attributes;
     NSFont *font;
-    NSColor *textColor;
-
-    if (_textView == nil || text == nil) {
-        return;
-    }
 
     font = [_textView font];
 
@@ -224,7 +217,82 @@
         font = [NSFont userFixedPitchFontOfSize:11.0];
     }
 
-    textColor = [_textView textColor];
+    return font;
+}
+
+- (NSFont *)boldConsoleFont
+{
+    NSFont *font;
+    NSFont *boldFont;
+
+    font = [self currentConsoleFont];
+    boldFont = nil;
+
+    if (font != nil) {
+        boldFont = [[NSFontManager sharedFontManager] convertFont:font
+                                                      toHaveTrait:NSBoldFontMask];
+    }
+
+    if (boldFont == nil) {
+        boldFont = font;
+    }
+
+    return boldFont;
+}
+
+- (NSColor *)currentTextColor
+{
+    NSColor *color;
+
+    color = [_textView textColor];
+
+    if (color == nil) {
+        color = [NSColor textColor];
+    }
+
+    return color;
+}
+
+- (NSColor *)mutedTextColor
+{
+    NSColor *color;
+
+    color = [self currentTextColor];
+
+    if ([color respondsToSelector:@selector(colorWithAlphaComponent:)]) {
+        return [color colorWithAlphaComponent:0.72];
+    }
+
+    return color;
+}
+
+- (NSColor *)separatorTextColor
+{
+    NSColor *color;
+
+    color = [self currentTextColor];
+
+    if ([color respondsToSelector:@selector(colorWithAlphaComponent:)]) {
+        return [color colorWithAlphaComponent:0.38];
+    }
+
+    return color;
+}
+
+- (void)clear
+{
+    [[_textView textStorage] setAttributedString:[[[NSAttributedString alloc] initWithString:@""] autorelease]];
+    [_marks removeAllObjects];
+}
+
+- (void)appendText:(NSString *)text font:(NSFont *)font color:(NSColor *)color
+{
+    NSAttributedString *attributedText;
+    NSMutableDictionary *attributes;
+
+    if (_textView == nil || text == nil) {
+        return;
+    }
 
     attributes = [NSMutableDictionary dictionary];
 
@@ -232,8 +300,8 @@
         [attributes setObject:font forKey:NSFontAttributeName];
     }
 
-    if (textColor != nil) {
-        [attributes setObject:textColor forKey:NSForegroundColorAttributeName];
+    if (color != nil) {
+        [attributes setObject:color forKey:NSForegroundColorAttributeName];
     }
 
     attributedText = [[[NSAttributedString alloc] initWithString:text
@@ -243,6 +311,13 @@
     [_textView scrollRangeToVisible:NSMakeRange([[_textView string] length], 0)];
 }
 
+- (void)appendText:(NSString *)text
+{
+    [self appendText:text
+                font:[self currentConsoleFont]
+               color:[self currentTextColor]];
+}
+
 - (void)appendLine:(NSString *)line
 {
     if (line == nil) {
@@ -250,6 +325,35 @@
     }
 
     [self appendText:[line stringByAppendingString:@"\n"]];
+}
+
+- (void)appendChellHeaderLine:(NSString *)line
+{
+    if (line == nil) {
+        return;
+    }
+
+    [self appendText:[line stringByAppendingString:@"\n"]
+                font:[self boldConsoleFont]
+               color:[self currentTextColor]];
+}
+
+- (void)appendChellMetadataLine:(NSString *)line
+{
+    if (line == nil) {
+        return;
+    }
+
+    [self appendText:[line stringByAppendingString:@"\n"]
+                font:[self currentConsoleFont]
+               color:[self mutedTextColor]];
+}
+
+- (void)appendChellSeparatorLine
+{
+    [self appendText:@"────────────────────────────────────────────────────────────\n"
+                font:[self currentConsoleFont]
+               color:[self separatorTextColor]];
 }
 
 - (void)addMark:(id)mark

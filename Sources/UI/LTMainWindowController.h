@@ -9,6 +9,10 @@
     LTProjectProfile *_currentProject;
     LTConsoleLogView *_consoleLogView;
     LTCommandRunner *_commandRunner;
+
+    NSUInteger _nextTranscriptBlockIdentifier;
+    NSUInteger _currentTranscriptBlockIdentifier;
+    NSUInteger _currentTranscriptLineCount;
 }
 
 - (IBAction)runBuildAction:(id)sender;
