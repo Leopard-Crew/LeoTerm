@@ -224,9 +224,10 @@
     _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(60, bounds.size.height - 72, 46, 24)];
     [_selectedBlockField setStringValue:@"1"];
     [_selectedBlockField setFont:[NSFont systemFontOfSize:11.0]];
+    [_selectedBlockField setAlignment:NSRightTextAlignment];
     [_selectedBlockField setDelegate:self];
 
-    _selectedBlockStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(110, bounds.size.height - 72, 18, 24)];
+    _selectedBlockStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(108, bounds.size.height - 72, 18, 24)];
     [_selectedBlockStepper setMinValue:1.0];
     [_selectedBlockStepper setMaxValue:1.0];
     [_selectedBlockStepper setIncrement:1.0];
@@ -238,7 +239,7 @@
 
     collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
                                            action:@selector(collapseSelectedTranscriptBlock:)
-                                            frame:NSMakeRect(136, bounds.size.height - 72, 140, 26)];
+                                            frame:NSMakeRect(134, bounds.size.height - 72, 140, 26)];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
     [cleanButton setAutoresizingMask:NSViewMinYMargin];
