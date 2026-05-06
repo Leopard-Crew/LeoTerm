@@ -290,13 +290,18 @@
                                                                        bounds.size.height - 106)];
     [consoleScrollView setBorderType:NSBezelBorder];
     [consoleScrollView setHasVerticalScroller:YES];
-    [consoleScrollView setHasHorizontalScroller:YES];
+    [consoleScrollView setHasHorizontalScroller:NO];
     [consoleScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
 
     consoleTextView = [[NSTextView alloc] initWithFrame:[[consoleScrollView contentView] bounds]];
     [consoleTextView setEditable:NO];
     [consoleTextView setSelectable:YES];
     [consoleTextView setFont:[NSFont fontWithName:@"Monaco" size:11.0]];
+    [consoleTextView setHorizontallyResizable:NO];
+    [consoleTextView setVerticallyResizable:YES];
+    [[consoleTextView textContainer] setWidthTracksTextView:YES];
+    [[consoleTextView textContainer] setContainerSize:NSMakeSize([[consoleScrollView contentView] bounds].size.width,
+                                                                 10000000.0)];
     [consoleTextView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
 
     [consoleScrollView setDocumentView:consoleTextView];
@@ -319,7 +324,7 @@
     [statusTextField setEditable:NO];
     [statusTextField setSelectable:NO];
     [statusTextField setFont:[NSFont systemFontOfSize:11.0]];
-    [statusTextField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
+    [statusTextField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
 
     _statusTextField = [statusTextField retain];
 
