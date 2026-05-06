@@ -18,6 +18,11 @@
 - (void)appendTranscriptBlock:(LTTranscriptBlock *)block;
 - (LTTranscriptBlock *)transcriptBlockWithIdentifier:(NSUInteger)identifier;
 
+- (NSString *)sanitizedBlockIdentifierString:(NSString *)string;
+- (NSUInteger)selectedBlockIdentifier;
+- (void)setSelectedBlockIdentifier:(NSUInteger)identifier;
+- (void)updateSelectedBlockControls;
+
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command;
@@ -57,6 +62,7 @@
         _currentTranscriptBlock = nil;
         _nextTranscriptBlockIdentifier = 1;
         _selectedBlockField = nil;
+        _selectedBlockStepper = nil;
 
         [self buildWindowInterface];
         [self appendWelcomeText];
@@ -218,10 +224,21 @@
     _selectedBlockField = [[NSTextField alloc] initWithFrame:NSMakeRect(60, bounds.size.height - 72, 46, 24)];
     [_selectedBlockField setStringValue:@"1"];
     [_selectedBlockField setFont:[NSFont systemFontOfSize:11.0]];
+    [_selectedBlockField setDelegate:self];
+
+    _selectedBlockStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(110, bounds.size.height - 72, 18, 24)];
+    [_selectedBlockStepper setMinValue:1.0];
+    [_selectedBlockStepper setMaxValue:1.0];
+    [_selectedBlockStepper setIncrement:1.0];
+    [_selectedBlockStepper setDoubleValue:1.0];
+    [_selectedBlockStepper setValueWraps:NO];
+    [_selectedBlockStepper setAutorepeat:YES];
+    [_selectedBlockStepper setTarget:self];
+    [_selectedBlockStepper setAction:@selector(selectedBlockStepperChanged:)];
 
     collapseSelectedButton = [self buttonWithTitle:@"Collapse Selected"
                                            action:@selector(collapseSelectedTranscriptBlock:)
-                                            frame:NSMakeRect(114, bounds.size.height - 72, 140, 26)];
+                                            frame:NSMakeRect(136, bounds.size.height - 72, 140, 26)];
 
     [buildButton setAutoresizingMask:NSViewMinYMargin];
     [cleanButton setAutoresizingMask:NSViewMinYMargin];
@@ -232,6 +249,7 @@
     [expandButton setAutoresizingMask:NSViewMinYMargin];
     [selectedBlockLabel setAutoresizingMask:NSViewMinYMargin];
     [_selectedBlockField setAutoresizingMask:NSViewMinYMargin];
+    [_selectedBlockStepper setAutoresizingMask:NSViewMinYMargin];
 
     [rightView addSubview:buildButton];
     [rightView addSubview:cleanButton];
@@ -242,8 +260,11 @@
     [rightView addSubview:expandButton];
     [rightView addSubview:selectedBlockLabel];
     [rightView addSubview:_selectedBlockField];
+    [rightView addSubview:_selectedBlockStepper];
 
     [selectedBlockLabel release];
+
+    [self updateSelectedBlockControls];
 
     consoleScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 12,
                                                                        bounds.size.width - 220,
@@ -380,6 +401,115 @@
     return nil;
 }
 
+- (NSString *)sanitizedBlockIdentifierString:(NSString *)string
+{
+    NSMutableString *digits;
+    NSUInteger index;
+    NSUInteger length;
+    unichar character;
+
+    digits = [NSMutableString string];
+
+    if (string == nil) {
+        return @"1";
+    }
+
+    length = [string length];
+
+    for (index = 0; index < length && [digits length] < 4; index++) {
+        character = [string characterAtIndex:index];
+
+        if (character >= '0' && character <= '9') {
+            [digits appendFormat:@"%C", character];
+        }
+    }
+
+    if ([digits length] == 0) {
+        return @"1";
+    }
+
+    return digits;
+}
+
+- (NSUInteger)selectedBlockIdentifier
+{
+    NSString *sanitizedString;
+    NSUInteger identifier;
+    NSUInteger count;
+
+    sanitizedString = [self sanitizedBlockIdentifierString:[_selectedBlockField stringValue]];
+    identifier = (NSUInteger)[sanitizedString intValue];
+
+    if (identifier < 1) {
+        identifier = 1;
+    }
+
+    count = [_transcriptBlocks count];
+
+    if (count > 0 && identifier > count) {
+        identifier = count;
+    }
+
+    [self setSelectedBlockIdentifier:identifier];
+
+    return identifier;
+}
+
+- (void)setSelectedBlockIdentifier:(NSUInteger)identifier
+{
+    NSUInteger count;
+
+    count = [_transcriptBlocks count];
+
+    if (identifier < 1) {
+        identifier = 1;
+    }
+
+    if (count > 0 && identifier > count) {
+        identifier = count;
+    }
+
+    if (_selectedBlockField != nil) {
+        [_selectedBlockField setStringValue:[NSString stringWithFormat:@"%lu",
+                                             (unsigned long)identifier]];
+    }
+
+    if (_selectedBlockStepper != nil) {
+        [_selectedBlockStepper setMinValue:1.0];
+        [_selectedBlockStepper setMaxValue:(double)(count > 0 ? count : 1)];
+        [_selectedBlockStepper setDoubleValue:(double)identifier];
+    }
+}
+
+- (void)updateSelectedBlockControls
+{
+    [self setSelectedBlockIdentifier:[self selectedBlockIdentifier]];
+}
+
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+    NSString *currentString;
+    NSString *sanitizedString;
+
+    if ([notification object] != _selectedBlockField) {
+        return;
+    }
+
+    currentString = [_selectedBlockField stringValue];
+    sanitizedString = [self sanitizedBlockIdentifierString:currentString];
+
+    if (![currentString isEqualToString:sanitizedString]) {
+        [_selectedBlockField setStringValue:sanitizedString];
+    }
+
+    [self updateSelectedBlockControls];
+}
+
+- (IBAction)selectedBlockStepperChanged:(id)sender
+{
+    [self setSelectedBlockIdentifier:(NSUInteger)[_selectedBlockStepper intValue]];
+}
+
 - (void)runProjectActionWithIdentifier:(NSString *)identifier
                                  title:(NSString *)title
                                command:(NSString *)command
@@ -410,6 +540,8 @@
                                                            workingDirectory:rootPath];
     [_transcriptBlocks addObject:_currentTranscriptBlock];
     _nextTranscriptBlockIdentifier++;
+
+    [self setSelectedBlockIdentifier:[_currentTranscriptBlock identifier]];
 
     timestamp = [self chellTimestampStringForDate:[_currentTranscriptBlock startedAt]];
 
@@ -521,7 +653,7 @@
 
 - (IBAction)collapseSelectedTranscriptBlock:(id)sender
 {
-    NSInteger identifier;
+    NSUInteger identifier;
     LTTranscriptBlock *block;
 
     if ([_commandRunner isRunning]) {
@@ -530,21 +662,21 @@
         return;
     }
 
-    [[self window] makeFirstResponder:nil];
-
-    identifier = [_selectedBlockField integerValue];
-
-    if (identifier <= 0) {
+    if ([_transcriptBlocks count] == 0) {
         [_consoleLogView appendLine:@""];
-        [_consoleLogView appendChellMetadataLine:@"Please enter a valid block ID."];
+        [_consoleLogView appendChellMetadataLine:@"No transcript block available."];
         return;
     }
 
-    block = [self transcriptBlockWithIdentifier:(NSUInteger)identifier];
+    [[self window] makeFirstResponder:nil];
+
+    identifier = [self selectedBlockIdentifier];
+    block = [self transcriptBlockWithIdentifier:identifier];
 
     if (block == nil) {
         [_consoleLogView appendLine:@""];
-        [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"Block #%04ld was not found.", (long)identifier]];
+        [_consoleLogView appendChellMetadataLine:[NSString stringWithFormat:@"Block #%04lu was not found.",
+                                                  (unsigned long)identifier]];
         return;
     }
 
@@ -567,6 +699,7 @@
         [[_transcriptBlocks objectAtIndex:index] setCollapsed:NO];
     }
 
+    [self updateSelectedBlockControls];
     [self renderTranscriptView];
 }
 
@@ -579,6 +712,7 @@
     [_transcriptBlocks release];
     [_currentTranscriptBlock release];
     [_selectedBlockField release];
+    [_selectedBlockStepper release];
 
     [super dealloc];
 }

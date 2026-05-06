@@ -16,6 +16,7 @@
     NSUInteger _nextTranscriptBlockIdentifier;
 
     NSTextField *_selectedBlockField;
+    NSStepper *_selectedBlockStepper;
 }
 
 - (IBAction)runBuildAction:(id)sender;
@@ -26,5 +27,6 @@
 - (IBAction)collapseLastTranscriptBlock:(id)sender;
 - (IBAction)collapseSelectedTranscriptBlock:(id)sender;
 - (IBAction)expandAllTranscriptBlocks:(id)sender;
+- (IBAction)selectedBlockStepperChanged:(id)sender;
 
 @end
